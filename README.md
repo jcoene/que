@@ -41,20 +41,17 @@ Environment variables must be set: `NSQD_HOST` and `NSQLOOKUPD_HOST`
 
   // The Id method returns a string used to represent the job (used for context).
   func (h *WidgetHandler) Id() string {
-    return wp.Widget.Id
+    return h.Widget.Id
   }
 
   // The Perform method does the work. It returns error on failure, nil on success.
-  func (wp *WidgetHandler) Perform() error {
-    if wp.Qty < 0 {
+  func (h *WidgetHandler) Perform() error {
+    // Perhaps there are no widgets in stock? Sounds like an error...
+    if h.Widget.Qty < 0 {
       return fmt.Errorf("we don't have enough widgets")
     }
 
-    return ShipWidget(wp.Widget)
-  }
-
-  // This does nothing, but does it very successfully.
-  func ShipWidget(w *Widget) {
+    // Do some work here and eventually return successfully
     return nil
   }
 
