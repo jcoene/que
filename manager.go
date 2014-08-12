@@ -41,6 +41,7 @@ func (m *Manager) Run() (err error) {
 		if err = c.ConnectToNSQLookupd(lookupdAddr); err != nil {
 			return
 		}
+		m.wg.Add(1)
 	}
 
 	sig := make(chan os.Signal, 1)
