@@ -34,7 +34,7 @@ type Handler interface {
 //
 // 	consumer.AddHandler(nsq.HandlerFunc(func(m *Message) error {
 // 		// handle the message
-// 	})
+// 	}))
 type HandlerFunc func(message *Message) error
 
 // HandleMessage implements the Handler interface
@@ -71,7 +71,7 @@ type Consumer struct {
 
 	mtx sync.RWMutex
 
-	logger *log.Logger
+	logger logger
 	logLvl LogLevel
 
 	id      int64
@@ -167,8 +167,14 @@ func (r *Consumer) conns() []*Conn {
 }
 
 // SetLogger assigns the logger to use as well as a level
-func (r *Consumer) SetLogger(logger *log.Logger, lvl LogLevel) {
-	r.logger = logger
+//
+// The logger parameter is an interface that requires the following
+// method to be implemented (such as the the stdlib log.Logger):
+//
+//    Output(calldepth int, s string)
+//
+func (r *Consumer) SetLogger(l logger, lvl LogLevel) {
+	r.logger = l
 	r.logLvl = lvl
 }
 
@@ -904,7 +910,7 @@ func (r *Consumer) AddConcurrentHandlers(handler Handler, concurrency int) {
 }
 
 func (r *Consumer) handlerLoop(handler Handler) {
-	r.log(LogLevelInfo, "starting Handler")
+	r.log(LogLevelDebug, "starting Handler")
 
 	for {
 		message, ok := <-r.incomingMessages
@@ -932,7 +938,7 @@ func (r *Consumer) handlerLoop(handler Handler) {
 	}
 
 exit:
-	r.log(LogLevelInfo, "stopping Handler")
+	r.log(LogLevelDebug, "stopping Handler")
 	if atomic.AddInt32(&r.runningHandlers, -1) == 0 {
 		r.exit()
 	}
@@ -961,8 +967,6 @@ func (r *Consumer) exit() {
 }
 
 func (r *Consumer) log(lvl LogLevel, line string, args ...interface{}) {
-	var prefix string
-
 	if r.logger == nil {
 		return
 	}
@@ -971,18 +975,7 @@ func (r *Consumer) log(lvl LogLevel, line string, args ...interface{}) {
 		return
 	}
 
-	switch lvl {
-	case LogLevelDebug:
-		prefix = "DBG"
-	case LogLevelInfo:
-		prefix = "INF"
-	case LogLevelWarning:
-		prefix = "WRN"
-	case LogLevelError:
-		prefix = "ERR"
-	}
-
-	r.logger.Printf("%-4s %3d [%s/%s] %s",
-		prefix, r.id, r.topic, r.channel,
-		fmt.Sprintf(line, args...))
+	r.logger.Output(2, fmt.Sprintf("%-4s %3d [%s/%s] %s",
+		logPrefix(lvl), r.id, r.topic, r.channel,
+		fmt.Sprintf(line, args...)))
 }
