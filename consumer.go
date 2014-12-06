@@ -20,14 +20,16 @@ type Consumer struct {
 
 // Creates a new Consumer with a given topic, channel, concurrency and handler generator. The
 // nsq max_in_flight setting defaults to the given concurrency value (you can change it later).
-func NewConsumer(topic string, channel string, count int, generator HandlerGenerator) (c *Consumer) {
+func NewConsumer(topic string, channel string, defaultCount int, generator HandlerGenerator) (c *Consumer) {
 	config := nsq.NewConfig()
+	count := getConcurrency(topic, defaultCount)
+
 	config.Set("max_in_flight", count)
 
 	return &Consumer{
 		Topic:   topic,
 		Channel: channel,
-		Count:   getConcurrency(topic, count),
+		Count:   count,
 		Config:  config,
 		wrapper: &wrapper{topic, channel, generator},
 	}
