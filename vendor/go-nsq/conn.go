@@ -280,10 +280,18 @@ func (c *Conn) identify() (*IdentifyResponse, error) {
 	ci["deflate_level"] = c.config.DeflateLevel
 	ci["snappy"] = c.config.Snappy
 	ci["feature_negotiation"] = true
-	ci["heartbeat_interval"] = int64(c.config.HeartbeatInterval / time.Millisecond)
+	if c.config.HeartbeatInterval == -1 {
+		ci["heartbeat_interval"] = -1
+	} else {
+		ci["heartbeat_interval"] = int64(c.config.HeartbeatInterval / time.Millisecond)
+	}
 	ci["sample_rate"] = c.config.SampleRate
 	ci["output_buffer_size"] = c.config.OutputBufferSize
-	ci["output_buffer_timeout"] = int64(c.config.OutputBufferTimeout / time.Millisecond)
+	if c.config.OutputBufferTimeout == -1 {
+		ci["output_buffer_timeout"] = -1
+	} else {
+		ci["output_buffer_timeout"] = int64(c.config.OutputBufferTimeout / time.Millisecond)
+	}
 	ci["msg_timeout"] = int64(c.config.MsgTimeout / time.Millisecond)
 	cmd, err := Identify(ci)
 	if err != nil {
@@ -450,6 +458,7 @@ func (c *Conn) auth(secret string) error {
 }
 
 func (c *Conn) readLoop() {
+	delegate := &connMessageDelegate{c}
 	for {
 		if atomic.LoadInt32(&c.closeFlag) == 1 {
 			goto exit
@@ -486,7 +495,7 @@ func (c *Conn) readLoop() {
 				c.delegate.OnIOError(c, err)
 				goto exit
 			}
-			msg.Delegate = &connMessageDelegate{c}
+			msg.Delegate = delegate
 
 			atomic.AddInt64(&c.rdyCount, -1)
 			atomic.AddInt64(&c.messagesInFlight, 1)
@@ -537,13 +546,6 @@ func (c *Conn) writeLoop() {
 			// Decrement this here so it is correct even if we can't respond to nsqd
 			msgsInFlight := atomic.AddInt64(&c.messagesInFlight, -1)
 
-			err := c.WriteCommand(resp.cmd)
-			if err != nil {
-				c.log(LogLevelError, "error sending command %s - %s", resp.cmd, err)
-				c.close()
-				continue
-			}
-
 			if resp.success {
 				c.log(LogLevelDebug, "FIN %s", resp.msg.ID)
 				c.delegate.OnMessageFinished(c, resp.msg)
@@ -556,6 +558,13 @@ func (c *Conn) writeLoop() {
 				if resp.backoff {
 					c.delegate.OnBackoff(c)
 				}
+			}
+
+			err := c.WriteCommand(resp.cmd)
+			if err != nil {
+				c.log(LogLevelError, "error sending command %s - %s", resp.cmd, err)
+				c.close()
+				continue
 			}
 
 			if msgsInFlight == 0 &&
@@ -612,6 +621,7 @@ func (c *Conn) close() {
 func (c *Conn) cleanup() {
 	<-c.drainReady
 	ticker := time.NewTicker(100 * time.Millisecond)
+	lastWarning := time.Now()
 	// writeLoop has exited, drain any remaining in flight messages
 	for {
 		// we're racing with readLoop which potentially has a message
@@ -625,13 +635,19 @@ func (c *Conn) cleanup() {
 			msgsInFlight = atomic.LoadInt64(&c.messagesInFlight)
 		}
 		if msgsInFlight > 0 {
-			c.log(LogLevelWarning, "draining... waiting for %d messages in flight", msgsInFlight)
+			if time.Now().Sub(lastWarning) > time.Second {
+				c.log(LogLevelWarning, "draining... waiting for %d messages in flight", msgsInFlight)
+				lastWarning = time.Now()
+			}
 			continue
 		}
 		// until the readLoop has exited we cannot be sure that there
 		// still won't be a race
 		if atomic.LoadInt32(&c.readLoopRunning) == 1 {
-			c.log(LogLevelWarning, "draining... readLoop still running")
+			if time.Now().Sub(lastWarning) > time.Second {
+				c.log(LogLevelWarning, "draining... readLoop still running")
+				lastWarning = time.Now()
+			}
 			continue
 		}
 		goto exit
