@@ -608,7 +608,7 @@ func (r *Consumer) startStopContinueBackoff(conn *Conn, success bool) {
 			r.backoffCounter--
 			backoffUpdated = true
 		}
-	} else {
+	} else if !r.config.BackoffDisabled {
 		maxBackoffCount := int32(math.Max(1, math.Ceil(
 			math.Log2(r.config.MaxBackoffDuration.Seconds()))))
 		if r.backoffCounter < maxBackoffCount {
