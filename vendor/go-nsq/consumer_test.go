@@ -3,18 +3,18 @@ package nsq
 import (
 	"bytes"
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/jcoene/que/vendor/go-simplejson"
 )
 
 type MyTestHandler struct {
@@ -38,12 +38,16 @@ func (h *MyTestHandler) HandleMessage(message *Message) error {
 		return errors.New("fail this message")
 	}
 
-	data, err := simplejson.NewJson(message.Body)
+	data := struct {
+		Msg string
+	}{}
+
+	err := json.Unmarshal(message.Body, &data)
 	if err != nil {
 		return err
 	}
 
-	msg, _ := data.Get("msg").String()
+	msg := data.Msg
 	if msg != "single" && msg != "double" {
 		h.t.Error("message 'action' was not correct: ", msg, data)
 	}
@@ -140,6 +144,9 @@ func TestConsumerTLSClientCertViaSet(t *testing.T) {
 
 func consumerTest(t *testing.T, cb func(c *Config)) {
 	config := NewConfig()
+	laddr := "127.0.0.1"
+	// so that the test can simulate binding consumer to specified address
+	config.LocalAddr, _ = net.ResolveTCPAddr("tcp", laddr+":0")
 	// so that the test can simulate reaching max requeues and a call to LogFailedMessage
 	config.DefaultRequeueDelay = 0
 	// so that the test wont timeout from backing off
@@ -177,9 +184,19 @@ func consumerTest(t *testing.T, cb func(c *Config)) {
 		t.Fatal(err)
 	}
 
+	stats := q.Stats()
+	if stats.Connections == 0 {
+		t.Fatal("stats report 0 connections (should be > 0)")
+	}
+
 	err = q.ConnectToNSQD(addr)
 	if err == nil {
 		t.Fatal("should not be able to connect to the same NSQ twice")
+	}
+
+	conn := q.conns()[0]
+	if !strings.HasPrefix(conn.conn.LocalAddr().String(), laddr) {
+		t.Fatal("connection should be bound to the specified address:", conn.conn.LocalAddr())
 	}
 
 	err = q.DisconnectFromNSQD("1.2.3.4:4150")
@@ -198,6 +215,18 @@ func consumerTest(t *testing.T, cb func(c *Config)) {
 	}
 
 	<-q.StopChan
+
+	stats = q.Stats()
+	if stats.Connections != 0 {
+		t.Fatalf("stats report %d active connections (should be 0)", stats.Connections)
+	}
+
+	stats = q.Stats()
+	if stats.MessagesReceived != uint64(h.messagesReceived+h.messagesFailed) {
+		t.Fatalf("stats report %d messages received (should be %d)",
+			stats.MessagesReceived,
+			h.messagesReceived+h.messagesFailed)
+	}
 
 	if h.messagesReceived != 8 || h.messagesSent != 4 {
 		t.Fatalf("end of test. should have handled a diff number of messages (got %d, sent %d)", h.messagesReceived, h.messagesSent)

@@ -86,7 +86,7 @@ func (c *Command) WriteTo(w io.Writer) (int64, error) {
 // The supplied map is marshaled into JSON to provide some flexibility
 // for this command to evolve over time.
 //
-// See http://bitly.github.io/nsq/clients/tcp_protocol_spec.html#identify for information
+// See http://nsq.io/clients/tcp_protocol_spec.html#identify for information
 // on the supported options
 func Identify(js map[string]interface{}) (*Command, error) {
 	body, err := json.Marshal(js)
@@ -133,8 +133,15 @@ func Publish(topic string, body []byte) *Command {
 	return &Command{[]byte("PUB"), params, body}
 }
 
-// MultiPublish creates a new Command to write more than one message to a given topic.
-// This is useful for high-throughput situations to avoid roundtrips and saturate the pipe.
+// DeferredPublish creates a new Command to write a message to a given topic
+// where the message will queue at the channel level until the timeout expires
+func DeferredPublish(topic string, delay time.Duration, body []byte) *Command {
+	var params = [][]byte{[]byte(topic), []byte(strconv.Itoa(int(delay / time.Millisecond)))}
+	return &Command{[]byte("DPUB"), params, body}
+}
+
+// MultiPublish creates a new Command to write more than one message to a given topic
+// (useful for high-throughput situations to avoid roundtrips and saturate the pipe)
 func MultiPublish(topic string, bodies [][]byte) (*Command, error) {
 	var params = [][]byte{[]byte(topic)}
 
