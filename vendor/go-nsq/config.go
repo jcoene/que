@@ -121,6 +121,8 @@ type Config struct {
 	MaxBackoffDuration time.Duration `opt:"max_backoff_duration" min:"0" max:"60m" default:"2m"`
 	// Unit of time for calculating consumer backoff
 	BackoffMultiplier time.Duration `opt:"backoff_multiplier" min:"0" max:"60m" default:"1s"`
+	// Enable or disable backoff
+	BackoffDisabled bool `opt:"backoff_disabled"`
 
 	// Maximum number of times this consumer will attempt to process a message before giving up
 	MaxAttempts uint16 `opt:"max_attempts" min:"0" max:"65535" default:"5"`
