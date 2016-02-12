@@ -29,6 +29,15 @@ func Publish(topic string, v interface{}) (err error) {
 	return p.Publish(topic, buf)
 }
 
+func PublishBytes(topic string, buf []byte) error {
+	p, err := getProducer()
+	if err != nil {
+		return err
+	}
+
+	return p.Publish(topic, buf)
+}
+
 func MultiPublish(topic string, vs ...interface{}) (err error) {
 	var p *nsq.Producer
 	body := make([][]byte, 0)
