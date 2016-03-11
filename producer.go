@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	"github.com/jcoene/env"
-	"github.com/jcoene/que/vendor/go-nsq"
+	"go-nsq"
 )
 
 var ppool []*nsq.Producer
