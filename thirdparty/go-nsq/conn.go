@@ -15,7 +15,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"go-snappystream"
+	"github.com/jcoene/que/thirdparty/go-snappystream"
 )
 
 // IdentifyResponse represents the metadata

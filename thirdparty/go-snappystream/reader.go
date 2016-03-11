@@ -7,7 +7,7 @@ import (
 	"hash/crc32"
 	"io"
 
-	"snappy-go/snappy"
+	"github.com/jcoene/que/thirdparty/snappy-go/snappy"
 )
 
 type reader struct {

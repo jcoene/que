@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/jcoene/env"
-	"go-nsq"
+	"github.com/jcoene/que/thirdparty/go-nsq"
 )
 
 // A Consumer receives messages on a given topic and channel and
