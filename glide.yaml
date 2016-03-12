@@ -1,0 +1,6 @@
+package: github.com/jcoene/que
+import:
+- package: github.com/jcoene/env
+- package: github.com/jcoene/gologger
+- package: github.com/jcoene/statsd-client
+- package: github.com/nsqio/go-nsq

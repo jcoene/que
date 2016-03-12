@@ -1,7 +1,7 @@
 package que
 
 import (
-	"github.com/jcoene/que/thirdparty/go-nsq"
+	"github.com/nsqio/go-nsq"
 )
 
 // A HandlerGenerator is a function that takes a Payload and returns a Handler and error (or nil if success)

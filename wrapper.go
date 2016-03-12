@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jcoene/que/thirdparty/go-nsq"
 	"github.com/jcoene/statsd-client"
+	"github.com/nsqio/go-nsq"
 )
 
 type wrapper struct {

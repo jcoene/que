@@ -1,0 +1,16 @@
+hash: 7262666c685bd013aa328ee063adda611eff3d49f8c09c8f33fbe3e5516337f7
+updated: 2016-03-12T12:00:54.355165544-06:00
+imports:
+- name: github.com/jcoene/env
+  version: e7de0e12d65b0ef6bd8a7a88ba15465f8c587b77
+- name: github.com/jcoene/gologger
+  version: 6bdddb86fa1878faf7f7b284153a76e7f6abc29f
+- name: github.com/jcoene/statsd-client
+  version: 50aeaf9a6e2d714f481b80bf12716844becf2dec
+- name: github.com/mreiferson/go-snappystream
+  version: 028eae7ab5c4c9e2d1cb4c4ca1e53259bbe7e504
+  subpackages:
+  - snappy-go
+- name: github.com/nsqio/go-nsq
+  version: 0b80d6f05e15ca1930e0c5e1d540ed627e299980
+devImports: []
