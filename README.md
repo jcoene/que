@@ -1,6 +1,8 @@
-# QUE?
+# Que
 
-Opinionated NSQ producer and consumer interfaces for Go. Dependencies are vendored for stability.
+![Build Status](https://travis-ci.org/jcoene/que.svg)
+
+Que is an opinionated NSQ producer and consumer interface for Go, with the ability to coordinate multiple consumers in a single process.
 
 ## Configuration
 
