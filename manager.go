@@ -95,7 +95,7 @@ func (m *Manager) Run() (err error) {
 				c.consumer.Stop()
 
 				// Wait for it to stop in a new goroutine
-				go func() {
+				go func(c *Consumer) {
 					select {
 					case <-c.consumer.StopChan:
 						Logger.Info("stopped consumer %s.", c.Id())
@@ -103,7 +103,7 @@ func (m *Manager) Run() (err error) {
 					case <-time.After(m.ConsumerTimeout):
 						Logger.Warn("timeout while stopping consumer %s (waited %v)", c.Id(), m.ConsumerTimeout)
 					}
-				}()
+				}(c)
 			}
 		}
 	}()
