@@ -48,7 +48,7 @@ func (m *Manager) AddCoworker(c Coworker) {
 // Connects Consumers to NSQ and blocks waiting for a signal to shut down,
 // coordinating the shutdown of consumers for a clean exit.
 func (m *Manager) Run() (err error) {
-	lookupdAddr := env.MustGet("NSQLOOKUPD_HOST")
+	lookupdAddr := env.GetOr("NSQLOOKUPD_HOST", "127.0.0.1:4161")
 
 	// Create consumers.
 	for _, c := range m.consumers {

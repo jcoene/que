@@ -82,7 +82,7 @@ func setupProducers() {
 	}
 
 	// Get the nsqd host (you can use haproxy if > 1 pool connection)
-	host := env.MustGet("NSQD_HOST")
+	host := env.GetOr("NSQD_HOST", "127.0.0.1:4150")
 
 	// Fill the pool with connections
 	for i := 0; i < pcount; i++ {
